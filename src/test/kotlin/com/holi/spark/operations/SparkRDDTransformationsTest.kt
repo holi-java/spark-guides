@@ -4,6 +4,7 @@ import com.holdenkarau.spark.testing.JavaRDDComparisons.assertRDDEquals
 import com.holdenkarau.spark.testing.SharedJavaSparkContext
 import org.junit.Test
 import java.util.Collections.synchronizedList
+import kotlin.coroutines.experimental.buildIterator
 
 @Suppress("MemberVisibilityCanPrivate")
 class SparkRDDTransformationsTest : SharedJavaSparkContext() {
@@ -12,7 +13,7 @@ class SparkRDDTransformationsTest : SharedJavaSparkContext() {
 
 
     @Test
-    fun `map resilient distributed dataset and then reduce the mapped collection`() {
+    fun `map resilient distributed dataset`() {
         val expected = lines.map { it.split(" ").size }
 
         assertRDDEquals(RDD.map { it.split(" ").size }, jsc().parallelize(expected))
@@ -26,4 +27,12 @@ class SparkRDDTransformationsTest : SharedJavaSparkContext() {
         assertRDDEquals(it, jsc().parallelize(lines.drop(1)))
     }
 
+
+    @Test
+    fun `flat mapping resilient distributed dataset`() {
+        @Suppress("EXPERIMENTAL_FEATURE_WARNING")
+        val it = RDD.flatMap { buildIterator { yield(it).also { yield(1) } } }
+
+        assertRDDEquals(it, jsc().parallelize(lines.flatMap { listOf(it, 1) }));
+    }
 }
