@@ -1,9 +1,11 @@
 package com.holi.spark.operations
 
 import com.holdenkarau.spark.testing.SharedJavaSparkContext
+import com.holi.util.Counter
+import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.assertion.assert
-import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.sameInstance
+import org.apache.spark.SparkDriverExecutionException
+import org.apache.spark.SparkException
 import org.apache.spark.storage.StorageLevel
 import org.junit.Rule
 import org.junit.Test
@@ -19,39 +21,38 @@ class SparkRDDCachingTest : SharedJavaSparkContext(), Serializable {
 
     val RDD by lazy { jsc().parallelize(lines, lines.size)!! }
 
-    val counter by lazy { @Suppress("DEPRECATION") jsc().accumulator(0)!! }
-    val count get() = counter.value()!!
+    val counter = Counter.starts(0)
 
     @Test
     fun `caching the transformation result on resilient distributed dataset`() {
-        val transformed = RDD.map { counter.add(1) }
+        val transformed = RDD.map { counter.inc() }
 
         transformed.cache()
-        assert.that(count, equalTo(0))
+        assert.that(counter.value, equalTo(0))
 
         transformed.count()
-        assert.that(count, equalTo(lines.size))
+        assert.that(counter.value, equalTo(lines.size))
 
         transformed.count()
-        assert.that(count, equalTo(lines.size))
+        assert.that(counter.value, equalTo(lines.size))
     }
 
 
     @Test
     fun `persist the transformation result on resilient distributed dataset`() {
         val transformed = RDD.map {
-            counter.add(1)
+            counter.inc()
             return@map 1// don't let map transformation return an un-serializable Unit
         }
 
         transformed.persist(StorageLevel.DISK_ONLY())
-        assert.that(count, equalTo(0))
+        assert.that(counter.value, equalTo(0))
 
         transformed.count()
-        assert.that(count, equalTo(lines.size))
+        assert.that(counter.value, equalTo(lines.size))
 
         transformed.count()
-        assert.that(count, equalTo(lines.size))
+        assert.that(counter.value, equalTo(lines.size))
     }
 
 
@@ -62,4 +63,38 @@ class SparkRDDCachingTest : SharedJavaSparkContext(), Serializable {
         assert.that(it, !sameInstance(RDD))
         assert.that(it.cache(), !sameInstance(it))
     }
+
+    @Test
+    fun `doesn't re-computes the original transformation if transformed resilient distributed dataset is lost`() {
+        val original = RDD.map { it.also { counter.inc() } }.cache().apply { count() }
+        assert.that(counter.value, equalTo(lines.size))
+
+        assert.that({ original.reduce { _, _ -> throw IllegalStateException() } }, throws(isA<SparkDriverExecutionException>(has(Throwable::cause, present()))))
+        assert.that(counter.value, equalTo(lines.size))
+
+        original.count()
+        assert.that(counter.value, equalTo(lines.size))
+    }
+
+    @Test
+    fun `re-computes the original transformation if a partition resilient distributed dataset is lost`() {
+        jsc().setLogLevel("OFF")
+
+        val original = RDD.map { failLastOnce(it) }.cache()
+
+
+        assert.that({ original.count() }, throws(isA<SparkException>(has("cause", { it.cause!! }, isA<IllegalStateException>()))))
+        assert.that(counter.value, equalTo(lines.size))
+
+        original.count()
+        assert.that(counter.value, equalTo(lines.size + 1))
+        //                                              ^
+        // fault-tolerant: re-computes the last failed operation
+    }
+
+    private fun <T> failLastOnce(value: T): T = when (Counter.connect().inc()) {
+        lines.size -> throw IllegalStateException()
+        else -> value
+    }
+
 }

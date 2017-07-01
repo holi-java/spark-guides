@@ -4,6 +4,7 @@ import com.holdenkarau.spark.testing.SharedJavaSparkContext
 import com.holi.java.unaryPlus
 import com.holi.spark.hamkrest.asInt
 import com.holi.spark.hamkrest.hasSize
+import com.holi.util.Counter
 import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.assertion.assert
 import org.apache.spark.SparkException
@@ -22,17 +23,13 @@ class SparkRDDSerialzingTest : SharedJavaSparkContext(), Serializable {
 
     val RDD by lazy { jsc().parallelize(lines, lines.size)!! }
 
-    val counter by lazy { @Suppress("DEPRECATION") jsc().accumulator(0)!! }
-
-    val count get() = counter.value()!!
-
 
     @Test
     fun `persist need all variables and methods can be serialized`() {
         jsc().setLogLevel("OFF")
 
         val transformed = RDD.map {
-            counter.add(1)//kotlin return an un-serializable Unit value
+            return@map Unit//kotlin return an un-serializable Unit value
         }
 
         transformed.persist(DISK_ONLY())
@@ -43,11 +40,12 @@ class SparkRDDSerialzingTest : SharedJavaSparkContext(), Serializable {
     @Test
     fun `variables must be serializable in parallel resilient distributed dataset operations`() {
         val local = AtomicInteger(0);
+        val shared = Counter.starts(0)
 
-        RDD.foreach { counter.add(1).also { +local } }
+        RDD.foreach { shared.inc().also { +local } }
 
         assert.that(local, asInt(0))
-        assert.that(counter.value(), equalTo(2))
+        assert.that(shared.value, equalTo(2))
     }
 
 
