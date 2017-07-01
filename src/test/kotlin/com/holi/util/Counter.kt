@@ -32,7 +32,7 @@ interface Counter : Serializable {
                         var value = initial;
                         while (true) {
                             try {
-                                value = accept().run { serve(value) }
+                                value = accept().serve(value)
                             } catch(ex: SocketException) {
                                 if (isClosed) break
                             }
