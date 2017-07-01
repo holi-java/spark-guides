@@ -57,7 +57,7 @@ data class Parameters(var pair: Pair<Int, Int>? = null) : AccumulatorV2<Pair<Int
     }
 
     override fun copy(): AccumulatorV2<Pair<Int, Int>, Pair<Int, Int>> {
-        return this.copy(pair)
+        return copy(pair = pair)
     }
 
     override fun merge(addend: AccumulatorV2<Pair<Int, Int>, Pair<Int, Int>>?) {
