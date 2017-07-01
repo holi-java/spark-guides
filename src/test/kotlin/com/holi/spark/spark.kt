@@ -2,7 +2,6 @@
 
 package com.holi.spark
 
-import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDDLike
 import org.apache.spark.api.java.JavaSparkContext
 import scala.Tuple2

@@ -5,14 +5,11 @@ package com.holi.spark.variables
 import com.holdenkarau.spark.testing.SharedJavaSparkContext
 import com.natpryce.hamkrest.assertion.assert
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.has
 import com.natpryce.hamkrest.isA
 import com.natpryce.hamkrest.throws
-import org.apache.spark.SparkException
 import org.junit.Test
 import java.io.NotSerializableException
 import java.io.Serializable
-import java.util.*
 
 class BroadcastVariableTest : SharedJavaSparkContext(), Serializable {
 

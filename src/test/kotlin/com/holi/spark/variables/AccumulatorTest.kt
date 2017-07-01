@@ -12,7 +12,6 @@ import com.natpryce.hamkrest.throws
 import org.apache.spark.SparkException
 import org.apache.spark.util.AccumulatorV2
 import org.junit.Test
-import java.io.NotSerializableException
 import java.io.Serializable
 
 class AccumulatorTest : SharedJavaSparkContext(), Serializable {
