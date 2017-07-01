@@ -53,7 +53,7 @@ data class Parameters(var pair: Pair<Int, Int>? = null) : AccumulatorV2<Pair<Int
     override fun reset() = let { pair = null }
 
     override fun add(added: Pair<Int, Int>?) {
-        pair = pair?.run { Pair(first + (added?.first ?: 0), second + (added?.second ?: 0)) } ?: added
+        pair = pair?.run { added?.let { first + added.first to second + added.second } ?: this } ?: added
     }
 
     override fun copy(): AccumulatorV2<Pair<Int, Int>, Pair<Int, Int>> {
