@@ -1,6 +1,7 @@
 package com.holi.spark.operations
 
 import com.holdenkarau.spark.testing.SharedJavaSparkContext
+import com.holi.spark.disableLog
 import com.holi.util.Counter
 import com.natpryce.hamkrest.*
 import com.natpryce.hamkrest.assertion.assert
@@ -78,7 +79,7 @@ class SparkRDDCachingTest : SharedJavaSparkContext(), Serializable {
 
     @Test
     fun `re-computes the original transformation if a partition resilient distributed dataset is lost`() {
-        jsc().setLogLevel("OFF")
+        jsc().disableLog()
 
         val original = RDD.map { failLastOnce(it) }.cache()
 

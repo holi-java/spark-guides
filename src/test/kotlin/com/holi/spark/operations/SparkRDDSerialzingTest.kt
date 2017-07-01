@@ -2,6 +2,7 @@ package com.holi.spark.operations
 
 import com.holdenkarau.spark.testing.SharedJavaSparkContext
 import com.holi.java.unaryPlus
+import com.holi.spark.disableLog
 import com.holi.spark.hamkrest.asInt
 import com.holi.spark.hamkrest.hasSize
 import com.holi.util.Counter
@@ -26,7 +27,7 @@ class SparkRDDSerialzingTest : SharedJavaSparkContext(), Serializable {
 
     @Test
     fun `persist need all variables and methods can be serialized`() {
-        jsc().setLogLevel("OFF")
+        jsc().disableLog()
 
         val transformed = RDD.map {
             return@map Unit//kotlin return an un-serializable Unit value
