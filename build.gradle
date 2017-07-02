@@ -48,9 +48,11 @@ dependencies {
 println(configurations.testCompile.files.size())
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-Xno-param-assertions", "-Xno-call-assertions"]
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-Xno-param-assertions", "-Xno-call-assertions"]
 }
 
 
